@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Golden Coin Infinity</title>
+    <style>
+        /* SUPER MOOI DESIGN (CSS) */
+        body {
+            margin: 0;
+            padding: 0;
+            background: radial-gradient(circle, #ffeb3b 0%, #fbc02d 100%);
+            overflow: hidden;
+            font-family: 'Arial', sans-serif;
+            display: flex;
+            user-select: none;
+            touch-action: manipulation;
+        }
+
+        /* De Draaiende Zonnestralen */
+        #sunburst {
+            position: absolute;
+            width: 200vw;
+            height: 200vw;
+            top: -50vw;
+            left: -50vw;
+            background: repeating-conic-gradient(from 0deg, rgba(255,255,255,0.15) 0deg 15deg, transparent 15deg 30deg);
+            animation: rotateSun 20s linear infinite;
+            z-index: 0;
+        }
+
+        @keyframes rotateSun {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        /* De Munt */
+        #game-container {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1;
+        }
+
+        #coin {
+            width: 250px;
+            height: 250px;
+            background: linear-gradient(135deg, #ffd700, #ff8f00);
+            border-radius: 50%;
+            border: 8px solid #fff;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3), inset 0 0 20px rgba(255,255,255,0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 40px;
+            font-weight: bold;
+            color: white;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            cursor: pointer;
+            transition: transform 0.05s;
+        }
+
+        #coin:active { transform: scale(0.9); }
+
+        /* De Sidebar (Upgrades) */
+        #sidebar {
+            width: 250px;
+            background: rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            border-left: 2px solid rgba(255,255,255,0.3);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            z-index: 2;
+        }
+
+        .upgrade-btn {
+            background: #444;
+            color: white;
+            padding: 15px;
+            border: none;
+            border-radius: 10px;
+            text-align: left;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .upgrade-btn.available {
+            background: #2e7d32;
+            box-shadow: 0 0 15px #4caf50;
+            transform: scale(1.02);
+        }
+
+        .floating-text {
+            position: absolute;
+            color: white;
+            font-weight: bold;
+            font-size: 24px;
+            pointer-events: none;
+            animation: floatUp 0.8s ease-out forwards;
+        }
+
+        @keyframes floatUp {
+            to { transform: translateY(-100px); opacity: 0; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="sunburst"></div>
+
+    <div id="game-container">
+        <div style="text-align: center;">
+            <h1 id="balance-display">€0</h1>
+            <div id="coin">GOLD</div>
+        </div>
+    </div>
+
+    <div id="sidebar">
+        <h2>Upgrades</h2>
+        <button id="upgrade-click" class="upgrade-btn">
+            <b>Click Power</b><br>Level: 0<br>Cost: €10
+        </button>
+        <button id="upgrade-auto" class="upgrade-btn">
+            <b>Auto Miner</b><br>Level: 0<br>Cost: €50
+        </button>
+    </div>
+
+    <script>
+        // GAME LOGIC (Python-style English Coding)
+        let balance = 0;
+        let clickPower = 1;
+        let autoRate = 0;
+        let multiplier = 1.15;
+
+        let costs = {
+            click: 10,
+            auto: 50
+        };
+
+        let levels = {
+            click: 0,
+            auto: 0
+        };
+
+        const coin = document.getElementById('coin');
+        const balanceDisplay = document.getElementById('balance-display');
+
+        // Main Click Event
+        coin.addEventListener('touchstart', (e) => {
+            e.preventDefault(); // Voorkom zoomen
+            handleAction(e.touches[0].clientX, e.touches[0].clientY);
+        });
+
+        coin.addEventListener('mousedown', (e) => {
+            handleAction(e.clientX, e.clientY);
+        });
+
+        function handleAction(x, y) {
+            balance += clickPower;
+            createFloatingText(x, y, "+" + formatNumber(clickPower));
+            updateUI();
+        }
+
+        // Upgrade Click Power
+        document.getElementById('upgrade-click').onclick = () => {
+            if (balance >= costs.click) {
+                balance -= costs.click;
+                levels.click++;
+                clickPower += 1;
+                costs.click = Math.floor(10 * Math.pow(multiplier, levels.click));
+                updateUI();
+            }
+        };
+
+        // Upgrade Auto Miner
+        document.getElementById('upgrade-auto').onclick = () => {
+            if (balance >= costs.auto) {
+                balance -= costs.auto;
+                levels.auto++;
+                autoRate += 2;
+                costs.auto = Math.floor(50 * Math.pow(multiplier, levels.auto));
+                updateUI();
+            }
+        };
+
+        // Auto Income Loop
+        setInterval(() => {
+            balance += autoRate;
+            updateUI();
+        }, 1000);
+
+        function formatNumber(n) {
+            if (n >= 1000000) return (n/1000000).toFixed(1) + "M";
+            if (n >= 1000) return (n/1000).toFixed(1) + "k";
+            return Math.floor(n);
+        }
+
+        function updateUI() {
+            balanceDisplay.innerText = "€" + formatNumber(balance);
+            
+            // Upgrade Click Button update
+            const btnClick = document.getElementById('upgrade-click');
+            btnClick.innerHTML = `<b>Click Power</b><br>Level: ${levels.click}<br>Cost: €${formatNumber(costs.click)}`;
+            btnClick.className = balance >= costs.click ? "upgrade-btn available" : "upgrade-btn";
+
+            // Upgrade Auto Button update
+            const btnAuto = document.getElementById('upgrade-auto');
+            btnAuto.innerHTML = `<b>Auto Miner</b><br>Level: ${levels.auto}<br>Cost: €${formatNumber(costs.auto)}`;
+            btnAuto.className = balance >= costs.auto ? "upgrade-btn available" : "upgrade-btn";
+        }
+
+        function createFloatingText(x, y, text) {
+            const el = document.createElement('div');
+            el.className = 'floating-text';
+            el.innerText = text;
+            el.style.left = x + 'px';
+            el.style.top = y + 'px';
+            document.body.appendChild(el);
+            setTimeout(() => el.remove(), 800);
+        }
+    </script>
+</body>
+</html>
